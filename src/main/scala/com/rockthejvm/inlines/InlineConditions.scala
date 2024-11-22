@@ -60,4 +60,14 @@ object InlineConditions {
 
   val anOption = Option("my perfect string")
   // val myPerfectString = matchOption(anOption) // won't compile (too general type)
+
+  // recursion!
+  transparent inline def sum(n: Int): Int = 
+    inline if (n <= 0) 0
+    else n + sum(n - 1)
+
+  val ten = sum(4) // 10
+  // recursion has its limits
+  // val bigSum = sum(100000) // this will crash
+
 }
