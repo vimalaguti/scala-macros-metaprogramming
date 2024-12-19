@@ -21,7 +21,7 @@ object ValueDefs {
 
     val valBody = {
       // technical detail: the given Quotes should be given by the symbol
-      given Quotes = mySymbol.asQuotes
+      given Quotes = mySymbol.asQuotes // equivalent to saying that this term is "owned" by the mySymbol
 
       '{ "Scala".length }.asTerm
     }
