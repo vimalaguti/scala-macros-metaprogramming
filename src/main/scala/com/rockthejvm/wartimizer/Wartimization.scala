@@ -41,7 +41,7 @@ object Wartimization {
         val fullName = typeSymbol.fullName // fully qualified class name of the object
         Some(unsafeLoadObject(fullName))
       } else {
-        report.errorAndAbort(s"The type [${typeSymbol.name}] does not correspond to an object.", x)
+        report.errorAndAbort(s"The expression ${x.show} of type ${typeSymbol.name} does not correspond to an compile-time constant object.", x)
       }
     }
 
