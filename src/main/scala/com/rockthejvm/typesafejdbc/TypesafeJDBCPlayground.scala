@@ -6,8 +6,7 @@ object QueryMagic {
   def run[A] (query: String): List[A] = ???
 }
 
-object TypesafeJDBCPlayground {
-  
+object Ideal {
   val query = "select * from users"
 
   // 1 - find the schema
@@ -32,7 +31,10 @@ object TypesafeJDBCPlayground {
 
   // 6 - profit
   val ids = magicResult.map(_.id)
-  
+}
+
+object TypesafeJDBCPlayground {
+
   def main(a: Array[String]) = 
-    println("lock and load")
+    println(JDBCCommunication.getSchema("select * from users"))
 }
