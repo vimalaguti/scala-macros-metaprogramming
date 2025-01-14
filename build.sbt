@@ -9,5 +9,8 @@ ThisBuild / scalacOptions ++= Seq(
 
 lazy val root = (project in file("."))
   .settings(
-    name := "scala-black-magic"
+    name := "scala-black-magic",
+    libraryDependencies ++= Seq(
+      "org.postgresql"         % "postgresql"                        % "42.7.1",
+    )
   )
