@@ -35,6 +35,20 @@ object Ideal {
 
 object TypesafeJDBCPlayground {
 
-  def main(a: Array[String]) = 
-    println(JDBCCommunication.getSchema("select * from users"))
+  def getValues[T <: JDBCType.TL, N <: JDBCNullability.TL, C <: String](rows: List[Row], colName: String)(using mapper: ColumnMapping[T, N, C]): List[mapper.Result] =
+    rows
+      .map(_.values)
+      .map(_.apply(colName))
+      .map(v => mapper.reader.read(v))
+
+  def main(a: Array[String]) = {
+    val rows = JDBCCommunication.runQuery("select * from users")
+    rows.foreach(println)
+    val names = getValues[JDBCType.TL.Varchar, JDBCNullability.TL.NonNullable, "name"](rows, "name")
+    names.foreach(println)
+    val ages = getValues[JDBCType.TL.Integer, JDBCNullability.TL.Nullable, "age"](rows, "age")
+    ages.foreach(println)
+    val hobbies = getValues[JDBCType.TL.Array[JDBCType.TL.Varchar], JDBCNullability.TL.NonNullable, "hobbies"](rows, "hobbies")
+    hobbies.foreach(println)
+  }
 }
