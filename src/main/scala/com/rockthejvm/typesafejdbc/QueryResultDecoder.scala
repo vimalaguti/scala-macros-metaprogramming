@@ -3,14 +3,35 @@ package com.rockthejvm.typesafejdbc
 import quoted.*
 
 trait QueryResultDecoder[A] {
+  type Result = A
   def decode(row: Row): A
 }
 
 object QueryResultDecoder {
-  transparent inline def make(query: String): QueryResultDecoder[?] = 
+
+  transparent inline def run(inline query: String): List[?] = 
+    ${ runImpl('query) }
+
+  // copied from `makeImpl` + returning a nice list
+  def runImpl(query: Expr[String])(using Quotes): Expr[List[?]] = {
+    val schema = JDBCCommunication.getSchema(query.valueOrAbort)
+    val descriptorToMappings = schema.values.map(descriptorToMapping)
+    val refinedType = makeRefinedType(descriptorToMappings)
+    val columnReaders = getColumnReaders(descriptorToMappings)
+    val decoder = makeDecoder(columnReaders, refinedType)
+    
+    refinedType match {
+      case '[t] =>
+        '{
+          JDBCCommunication.runQuery($query).map($decoder.decode).asInstanceOf[List[t]]
+        }
+    }
+  }
+
+  transparent inline def make(inline query: String): QueryResultDecoder[?] = 
     ${ makeImpl('query) }
 
-  private def makeImpl(query: Expr[String])(using q: Quotes): Expr[QueryResultDecoder[?]] = {
+  def makeImpl(query: Expr[String])(using q: Quotes): Expr[QueryResultDecoder[?]] = {
     // 1 - find the schema
     // don't gasp at me connecting to the database at compile time
     val schema = JDBCCommunication.getSchema(query.valueOrAbort)
@@ -90,7 +111,8 @@ object QueryResultDecoder {
   private def makeDecoder(columnReaders: Expr[List[(String, JDBCReader[?])]], refinedType: Type[?])(using Quotes): Expr[QueryResultDecoder[?]] = 
     refinedType match {
       case '[r] =>
-        '{  new QueryResultDecoder {
+        '{  new QueryResultDecoder[r] {
+              type Result = r
               override def decode(row: Row): r = 
                 QueryResult($columnReaders)(row).asInstanceOf[r]
             } 

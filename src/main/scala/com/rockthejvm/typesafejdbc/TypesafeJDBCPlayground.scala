@@ -2,37 +2,6 @@ package com.rockthejvm.typesafejdbc
 
 import scala.reflect.Selectable.reflectiveSelectable
 
-object QueryMagic {
-  def run[A] (query: String): List[A] = ???
-}
-
-object Ideal {
-  val query = "select * from users"
-
-  // 1 - find the schema
-  val schema = JDBCCommunication.getSchema(query)
-
-  // 2 - identify column mappings for all columns (synthesized as givens)
-  val idMapping: ColumnMapping[JDBCType.TL.Integer, JDBCNullability.TL.Nullable, "id"] = ??? // = summon[ColumnMapping[JDBCType.TL.Integer, JDBCNullability.TL.Nullable, "id"]] // fails because no given
-
-  // 3 - infer the result type
-  type RefinedResult = QueryResult {
-    val id: idMapping.Result // same as Int
-    // same for the rest of the columns (automatically)
-  }
-
-  // 4 - ability to read values from JDBC into the correct type
-  val idColumnReader = idMapping.reader
-  // same for the rest of the columns
-
-  // 5 - run the query and return the correct type
-  val magicResult = QueryMagic.run[RefinedResult](query)
-  //                               ^^^^^^^^^^^^^ passed by the macro automatically
-
-  // 6 - profit
-  val ids = magicResult.map(_.id)
-}
-
 object TypesafeJDBCPlayground {
 
   def getValues[T <: JDBCType.TL, N <: JDBCNullability.TL, C <: String](rows: List[Row], colName: String)(using mapper: ColumnMapping[T, N, C]): List[mapper.Result] =
@@ -41,7 +10,7 @@ object TypesafeJDBCPlayground {
       .map(_.apply(colName))
       .map(v => mapper.reader.read(v))
 
-  def main(a: Array[String]) = {
+  def demoJDBCReaders() = {
     val rows = JDBCCommunication.runQuery("select * from users")
     rows.foreach(println)
     val names = getValues[JDBCType.TL.Varchar, JDBCNullability.TL.NonNullable, "name"](rows, "name")
@@ -50,5 +19,24 @@ object TypesafeJDBCPlayground {
     ages.foreach(println)
     val hobbies = getValues[JDBCType.TL.Array[JDBCType.TL.Varchar], JDBCNullability.TL.NonNullable, "hobbies"](rows, "hobbies")
     hobbies.foreach(println)
+  }
+
+  def demoRefinedType() = {
+    inline val query = "select * from users"
+    val decoder = QueryResultDecoder.make(query)
+    val rows = JDBCCommunication.runQuery(query)
+    val typedRows = rows.map(decoder.decode)
+    val names = typedRows.map(_.name)
+    names.foreach(println)
+  }
+
+  def demoRefinedType_v2 = {
+    inline val query = "select * from users"
+    val typedRows = QueryResultDecoder.run(query)
+    typedRows.map(_.name).foreach(println)
+  }
+
+  def main(a: Array[String]) = {
+    demoRefinedType()
   }
 }
