@@ -1,5 +1,7 @@
 package com.rockthejvm.typesafejdbc
 
+import quoted.*
+
 trait ColumnMapping[T <: JDBCType.TL, N <: JDBCNullability.TL, C <: String] {
   type Result // left abstract, will be inferred by the compiler
 
@@ -40,6 +42,17 @@ object ColumnMapping {
   given [C <: String, T <: JDBCType.TL, R](using existingMapper: Aux[T, NonNullable, C, R]): ColumnMapping[JDBCType.TL.Array[T], NonNullable, C] with {
     type Result = List[R]
     override def reader: JDBCReader[Result] = existingMapper.reader.toList
+  }
+
+  def produceColumnMappingError[T: Type, N: Type, C: Type](using q: Quotes) = {
+    import q.reflect.*
+    
+    given Printer[TypeRepr] = Printer.TypeReprShortCode
+    val tType = TypeRepr.of[T].show
+    val nType = TypeRepr.of[N].show
+    val cType = TypeRepr.of[C].show
+
+    report.errorAndAbort(s"Failed to summon a given ColumnMapping[$tType, $nType, $cType]")
   }
 }
 
