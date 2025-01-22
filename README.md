@@ -1,5 +1,5 @@
 
-## The official repository for the Scala Macros and Metaprogramming course on Rock the JVm
+## The official repository for the Scala Macros and Metaprogramming course on Rock the JVM
 
 Powered by [Rock the JVM!](rockthejvm.com)
 
